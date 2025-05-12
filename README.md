@@ -32,7 +32,7 @@ Real-time collaborative text editor with multiple clients and live sync using We
 
 #### 1. Clone repository
 ```
-git clone https://github.com/Shavel-Viktoryia/collab-editor.git
+git clone https://github.com/1sarmatt/sna_project.git
 cd collab-editor
 ```
 
