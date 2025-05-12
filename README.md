@@ -27,6 +27,8 @@ Real-time collaborative text editor with multiple clients and live sync using We
 
 **Frontend**: Vanilla JS + Socket.IO client
 
+**Database**: MongoDB
+
 
 ### 📥 Installation
 
