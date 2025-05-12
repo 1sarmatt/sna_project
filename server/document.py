@@ -2,7 +2,7 @@
 import time
 import uuid
 from typing import List, Dict, Any
-from db import documents_collection
+from server.db import documents_collection
 
 class TextOperation:
     def __init__(self, type: str, position: int, text: str = '', length: int = 0,

@@ -1,5 +1,5 @@
 from typing import Dict, List
-from document import Document
+from server.document import Document
 
 class SessionManager:
     def __init__(self):

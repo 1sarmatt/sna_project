@@ -2,8 +2,8 @@ import os
 import time
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from document import Document
-from session_manager import SessionManager
+from server.document import Document
+from server.session_manager import SessionManager
 
 # Initialize Flask app, pointing to the client folder for templates and static files
 app = Flask(__name__, 
@@ -164,7 +164,8 @@ def handle_undo(data):
                 'action': 'undo'
             }, room=session_id)
 
-# ---- MAIN EXECUTION ----
+import eventlet
+eventlet.monkey_patch()
+
 if __name__ == '__main__':
-    # Start the Socket.IO server
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, host='0.0.0.0', port=5001)
