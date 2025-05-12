@@ -33,7 +33,7 @@ Real-time collaborative text editor with multiple clients and live sync using We
 #### 1. Clone repository
 ```
 git clone https://github.com/1sarmatt/sna_project.git
-cd collab-editor
+cd sna_project
 ```
 
 #### 2. Install dependencies
