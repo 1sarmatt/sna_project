@@ -48,7 +48,7 @@ pip install -r requirements.txt
 python server/app.py
 ```
 
-By default the app is listen on ```http://127.0.0.1:5000```
+By default the app is listen on ```http://127.0.0.1:5001```
 
 ### 🚀 Usage
 
