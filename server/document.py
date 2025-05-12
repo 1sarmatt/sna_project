@@ -1,90 +1,89 @@
+# document.py (updated)
 import time
 import uuid
 from typing import List, Dict, Any
+from db import documents_collection
 
 class TextOperation:
-    def __init__(self, type: str, position: int, text: str = '', length: int = 0, deleted_text: str = '', username: str = ''):
-        # Unique identifier for this operation
-        self.id = str(uuid.uuid4())
-        # Operation type: 'insert' or 'delete'
+    def __init__(self, type: str, position: int, text: str = '', length: int = 0,
+                 deleted_text: str = '', username: str = '', timestamp=None, id=None):
+        self.id = id or str(uuid.uuid4())
         self.type = type
-        # The position in the document where this operation applies
         self.position = position
-        # Text to insert (for insert operations)
         self.text = text
-        # Number of characters to delete (for delete operations)
         self.length = length
-        # Stores deleted text after applying a delete (for undo/history)
         self.deleted_text = deleted_text
-        # Timestamp in milliseconds
-        self.timestamp = time.time() * 1000
-        # Username
+        self.timestamp = timestamp or time.time() * 1000
         self.username = username
-    
+
     def to_dict(self) -> Dict[str, Any]:
-        #  Serialize this operation for JSON transport.
-        return {
-            'id': self.id,
-            'type': self.type,
-            'position': self.position,
-            'text': self.text,
-            'length': self.length,
-            'deleted_text': self.deleted_text,
-            'timestamp': self.timestamp,
-            'username': self.username
-        }
+        return self.__dict__
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]):
+        return TextOperation(**data)
 
 class Document:
     def __init__(self, session_id: str):
-        # Identifier for this collaborative session
         self.session_id = session_id
-        # The current document text
         self.text = ''
-        # Number of operations applied so far (revision counter)
         self.revision = 0
-        # Map of client_id → their last known revision
         self.clients = {}
-        # History of all TextOperation instances applied
-        self.history = []
+        self.history: List[TextOperation] = []
+        self.load_from_db()
+
+    def load_from_db(self):
+        doc = documents_collection.find_one({'session_id': self.session_id})
+        if doc:
+            self.text = doc.get('text', '')
+            self.revision = doc.get('revision', 0)
+            self.history = [TextOperation.from_dict(op) for op in doc.get('history', [])]
+
+    def save_to_db(self):
+        documents_collection.update_one(
+            {'session_id': self.session_id},
+            {
+                '$set': {
+                    'text': self.text,
+                    'revision': self.revision,
+                    'history': [op.to_dict() for op in self.history]
+                }
+            },
+            upsert=True
+        )
 
     def undo_last_operation(self):
-        # Revert the last operation in history
         if not self.history:
             return None
-        
+
         last_op = self.history.pop()
         inverse_ops = []
-        
+
         if last_op.type == 'insert':
             inverse_ops.append(TextOperation(
                 type='delete',
                 position=last_op.position,
                 length=len(last_op.text),
-                deleted_text=last_op.text  
+                deleted_text=last_op.text
             ))
         elif last_op.type == 'delete':
             inverse_ops.append(TextOperation(
                 type='insert',
                 position=last_op.position,
-                text=last_op.deleted_text 
+                text=last_op.deleted_text
             ))
 
-        # Apply the inverse operation to the document text
         for op in inverse_ops:
             if op.type == 'insert':
-                # Insert text at the position
                 self.text = self.text[:op.position] + op.text + self.text[op.position:]
             elif op.type == 'delete':
-                # Remove a slice of text
                 self.text = self.text[:op.position] + self.text[op.position + op.length:]
 
-        # Reduce revision by one
         self.revision -= 1
-        # Return inverse operation(s) as list of dicts
+        self.save_to_db()
         return [op.to_dict() for op in inverse_ops]
-    
+
     def apply_operations(self, client_id: str, client_revision: int, operations: List[Dict]) -> List[Dict]:
-        # Apply a batch of operations from a client
         incoming_ops = [TextOperation(**op) for op in operations]
         if client_revision < self.revision:
             missed_ops = self.history[client_revision:]
@@ -92,29 +91,24 @@ class Document:
         else:
             transformed_ops = incoming_ops
         result_ops = []
+
         for op in transformed_ops:
             if op.type == 'insert':
-                # Insert the new text
                 self.text = self.text[:op.position] + op.text + self.text[op.position:]
             elif op.type == 'delete':
-                # Capture deleted text for undo/history
                 op.deleted_text = self.text[op.position:op.position + op.length]
-                # Delete the slice
                 self.text = self.text[:op.position] + self.text[op.position + op.length:]
-
-            # Record in history and collect for response
             self.history.append(op)
             result_ops.append(op.to_dict())
 
-        # Increase revision by number of applied ops
         self.revision += len(result_ops)
-        # Update this client's known revision
         self.clients[client_id] = self.revision
+        self.save_to_db()
         return result_ops
-    
+
     def _transform_operations(self, incoming_ops: List[TextOperation], missed_ops: List[TextOperation]) -> List[TextOperation]:
         transformed_ops = incoming_ops.copy()
-        
+
         for missed_op in missed_ops:
             for i, op in enumerate(transformed_ops):
                 if op.position < missed_op.position:
@@ -132,9 +126,8 @@ class Document:
                         op.position += len(missed_op.text)
                     elif op.type == 'insert' and missed_op.type == 'delete':
                         op.position = max(missed_op.position, op.position)
-        
+
         return transformed_ops
-    
+
     def get_edit_history(self) -> List[Dict]:
-        #  Return the full history as a list of dicts,
         return [op.to_dict() for op in self.history]
