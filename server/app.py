@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 import os
 import time
 from flask import Flask, render_template, request
@@ -6,9 +8,9 @@ from document import Document
 from session_manager import SessionManager
 
 # Initialize Flask app, pointing to the client folder for templates and static files
-app = Flask(__name__, 
-            template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '../client/templates'),
-            static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '../client/static'))
+app = Flask(__name__,
+            template_folder="templates",
+            static_folder="static")
 app.config['SECRET_KEY'] = 'secret!' # Secret key for session management
 
 # Initialize Socket.IO for real-time communication
@@ -167,4 +169,4 @@ def handle_undo(data):
 # ---- MAIN EXECUTION ----
 if __name__ == '__main__':
     # Start the Socket.IO server
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, host='0.0.0.0', port=5001)
