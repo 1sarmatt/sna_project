@@ -20,6 +20,8 @@ Real-time collaborative text editor with multiple clients and live sync using We
 
 - **Nginx Reverse Proxy** — production-ready HTTP routing and WebSocket support.
 
+- **Docker Support** — ready-to-use containerized deployment.
+
 
 ### 🛠 Tech Stack
 
@@ -31,7 +33,7 @@ Real-time collaborative text editor with multiple clients and live sync using We
 
 **Database**: MongoDB
 
-**Web Server**: Nginx (reverse proxy for Flask-SocketIO)
+**Infrastructure**: Docker, Nginx
 
 
 ### 📥 Installation
@@ -42,54 +44,12 @@ git clone https://github.com/1sarmatt/sna_project.git
 cd sna_project
 ```
 
-#### 2. Install dependencies
+#### 2. Run the docker
 ```
-pip install -r requirements.txt
-```
-
-#### 3. Run the server
-```
-python server/app.py
+docker-compose up --build 
 ```
 
-By default the app is listen on ```http://127.0.0.1:5001```
-
-### 🌐 Nginx Configuration
-
-**nginx.conf**:
-```
-worker_processes 1;
-
-events {
-    worker_connections 1024;
-}
-
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-
-    sendfile        on;
-    keepalive_timeout  65;
-
-    server {
-        listen       80;
-        server_name  localhost;
-
-        location / {
-            proxy_pass         http://127.0.0.1:5001;
-            proxy_http_version 1.1;
-            proxy_set_header   Upgrade $http_upgrade;
-            proxy_set_header   Connection "upgrade";
-            proxy_set_header   Host $host;
-        }
-    }
-}
-```
-Save it as ```/etc/nginx/nginx.conf```
-
-And restart nginx: ```sudo systemctl restart nginx```
-
-Now your app will be accessible via ```http://localhost/```
+By default the app is listen on ```http://localhost```
 
 ### 🚀 Usage
 
