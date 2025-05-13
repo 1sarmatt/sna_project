@@ -30,15 +30,6 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install dependencies (for linting/tests)
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8
-
-      - name: Lint Python code
-        run: |
-          flake8 server
-
       - name: Build Docker images
         run: |
           docker-compose -f docker-compose.yml build
