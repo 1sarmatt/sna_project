@@ -32,18 +32,18 @@ jobs:
 
       - name: Build Docker images
         run: |
-          docker-compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml build
 
       - name: Run Docker containers
         run: |
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d
         env:
           MONGO_URI: mongodb://mongo:27017
 
       - name: Wait for app to be healthy
         run: |
           sleep 10  # Replace with better healthcheck if needed
-          curl --fail http://localhost || (docker-compose logs && exit 1)
+          curl --fail http://localhost || (docker compose logs && exit 1)
 
       - name: Stop containers
-        run: docker-compose down
+        run: docker compose down
