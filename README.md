@@ -18,6 +18,8 @@ Real-time collaborative text editor with multiple clients and live sync using We
 
 - **Edit History** — request and replay full edit history.
 
+- **Nginx Reverse Proxy** — production-ready HTTP routing and WebSocket support.
+
 
 ### 🛠 Tech Stack
 
@@ -28,6 +30,8 @@ Real-time collaborative text editor with multiple clients and live sync using We
 **Frontend**: Vanilla JS + Socket.IO client
 
 **Database**: MongoDB
+
+**Web Server**: Nginx (reverse proxy for Flask-SocketIO)
 
 
 ### 📥 Installation
@@ -49,6 +53,43 @@ python server/app.py
 ```
 
 By default the app is listen on ```http://127.0.0.1:5001```
+
+### 🌐 Nginx Configuration
+
+**nginx.conf**:
+```
+worker_processes 1;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+    keepalive_timeout  65;
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location / {
+            proxy_pass         http://127.0.0.1:5001;
+            proxy_http_version 1.1;
+            proxy_set_header   Upgrade $http_upgrade;
+            proxy_set_header   Connection "upgrade";
+            proxy_set_header   Host $host;
+        }
+    }
+}
+```
+Save it as ```/etc/nginx/nginx.conf```
+
+And restart nginx: ```sudo systemctl restart nginx```
+
+Now your app will be accessible via ```http://localhost/```
 
 ### 🚀 Usage
 
